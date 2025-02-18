@@ -8,13 +8,31 @@
         body { text-align: center; }
         canvas { background: lightgray; display: block; margin: auto; }
         .joystick-container { display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); }
+        .joystick {
+            width: 80px;
+            height: 80px;
+            background: rgba(0, 0, 0, 0.5);
+            border-radius: 50%;
+            position: relative;
+        }
+        .joystick-handle {
+            width: 40px;
+            height: 40px;
+            background: red;
+            border-radius: 50%;
+            position: absolute;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
     </style>
 </head>
 <body>
     <canvas id="gameCanvas" width="500" height="500"></canvas>
     <div class="joystick-container" id="joystickContainer">
-        <input type="range" id="joystickX" min="-1" max="1" step="0.1" value="0">
-        <input type="range" id="joystickY" min="-1" max="1" step="0.1" value="0">
+        <div class="joystick" id="joystick">
+            <div class="joystick-handle" id="joystickHandle"></div>
+        </div>
     </div>
     
     <script>
@@ -22,9 +40,7 @@
         const ctx = canvas.getContext("2d");
         const ball = { x: 250, y: 250, radius: 20, speed: 3, dx: 0, dy: 0 };
         let gamepadConnected = false;
-        let joystick = { x: 0, y: 0 };
 
-        // Draw ball
         function drawBall() {
             ctx.clearRect(0, 0, canvas.width, canvas.height);
             ctx.beginPath();
@@ -48,7 +64,6 @@
         }
         gameLoop();
 
-        // Keyboard controls
         window.addEventListener("keydown", (e) => {
             if (e.key === "ArrowUp" || e.key === "w") ball.dy = -1;
             if (e.key === "ArrowDown" || e.key === "s") ball.dy = 1;
@@ -61,7 +76,6 @@
             ball.dy = 0;
         });
 
-        // Gamepad support
         window.addEventListener("gamepadconnected", () => {
             gamepadConnected = true;
         });
@@ -76,13 +90,30 @@
         }
         setInterval(handleGamepad, 100);
 
-        // Mobile Joystick
         if (/Mobi|Android/i.test(navigator.userAgent)) {
             document.getElementById("joystickContainer").style.display = "block";
-            const joystickX = document.getElementById("joystickX");
-            const joystickY = document.getElementById("joystickY");
-            joystickX.addEventListener("input", () => ball.dx = parseFloat(joystickX.value));
-            joystickY.addEventListener("input", () => ball.dy = parseFloat(joystickY.value));
+            const joystick = document.getElementById("joystick");
+            const handle = document.getElementById("joystickHandle");
+            let startX, startY;
+
+            joystick.addEventListener("touchstart", (e) => {
+                const touch = e.touches[0];
+                startX = touch.clientX;
+                startY = touch.clientY;
+            });
+
+            joystick.addEventListener("touchmove", (e) => {
+                const touch = e.touches[0];
+                const deltaX = touch.clientX - startX;
+                const deltaY = touch.clientY - startY;
+                ball.dx = deltaX / 40;
+                ball.dy = deltaY / 40;
+            });
+
+            joystick.addEventListener("touchend", () => {
+                ball.dx = 0;
+                ball.dy = 0;
+            });
         }
     </script>
 </body>
