@@ -1,0 +1,89 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Ball Control</title>
+    <style>
+        body { text-align: center; }
+        canvas { background: lightgray; display: block; margin: auto; }
+        .joystick-container { display: none; position: fixed; bottom: 20px; left: 50%; transform: translateX(-50%); }
+    </style>
+</head>
+<body>
+    <canvas id="gameCanvas" width="500" height="500"></canvas>
+    <div class="joystick-container" id="joystickContainer">
+        <input type="range" id="joystickX" min="-1" max="1" step="0.1" value="0">
+        <input type="range" id="joystickY" min="-1" max="1" step="0.1" value="0">
+    </div>
+    
+    <script>
+        const canvas = document.getElementById("gameCanvas");
+        const ctx = canvas.getContext("2d");
+        const ball = { x: 250, y: 250, radius: 20, speed: 3, dx: 0, dy: 0 };
+        let gamepadConnected = false;
+        let joystick = { x: 0, y: 0 };
+
+        // Draw ball
+        function drawBall() {
+            ctx.clearRect(0, 0, canvas.width, canvas.height);
+            ctx.beginPath();
+            ctx.arc(ball.x, ball.y, ball.radius, 0, Math.PI * 2);
+            ctx.fillStyle = "red";
+            ctx.fill();
+            ctx.closePath();
+        }
+
+        function updateBall() {
+            ball.x += ball.dx * ball.speed;
+            ball.y += ball.dy * ball.speed;
+            ball.x = Math.max(ball.radius, Math.min(canvas.width - ball.radius, ball.x));
+            ball.y = Math.max(ball.radius, Math.min(canvas.height - ball.radius, ball.y));
+        }
+
+        function gameLoop() {
+            updateBall();
+            drawBall();
+            requestAnimationFrame(gameLoop);
+        }
+        gameLoop();
+
+        // Keyboard controls
+        window.addEventListener("keydown", (e) => {
+            if (e.key === "ArrowUp" || e.key === "w") ball.dy = -1;
+            if (e.key === "ArrowDown" || e.key === "s") ball.dy = 1;
+            if (e.key === "ArrowLeft" || e.key === "a") ball.dx = -1;
+            if (e.key === "ArrowRight" || e.key === "d") ball.dx = 1;
+        });
+
+        window.addEventListener("keyup", () => {
+            ball.dx = 0;
+            ball.dy = 0;
+        });
+
+        // Gamepad support
+        window.addEventListener("gamepadconnected", () => {
+            gamepadConnected = true;
+        });
+
+        function handleGamepad() {
+            if (!gamepadConnected) return;
+            const gamepad = navigator.getGamepads()[0];
+            if (gamepad) {
+                ball.dx = gamepad.axes[0];
+                ball.dy = gamepad.axes[1];
+            }
+        }
+        setInterval(handleGamepad, 100);
+
+        // Mobile Joystick
+        if (/Mobi|Android/i.test(navigator.userAgent)) {
+            document.getElementById("joystickContainer").style.display = "block";
+            const joystickX = document.getElementById("joystickX");
+            const joystickY = document.getElementById("joystickY");
+            joystickX.addEventListener("input", () => ball.dx = parseFloat(joystickX.value));
+            joystickY.addEventListener("input", () => ball.dy = parseFloat(joystickY.value));
+        }
+    </script>
+</body>
+</html>
